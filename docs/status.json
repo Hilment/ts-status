@@ -1,16 +1,16 @@
 {
   "success": true,
-  "online": 1,
+  "online": 2,
   "max": 10,
   "serverName": "25℃游戏房",
   "channels": 6,
-  "uptime": 10854769,
+  "uptime": 10858156,
   "status": "online",
   "port": 6517,
   "platform": "Linux",
   "version": "TeaSpeak 1.4.22 [Build: 1607833732]",
-  "queryType": "ts3cn-panel",
+  "queryType": "ts3cn-autologin",
   "host": "vv.teamspeak3.cn",
   "voicePort": 6517,
-  "queryTime": "2026-09-13T01:42:47.924Z"
+  "queryTime": "2026-09-13T02:39:14.912Z"
 }
