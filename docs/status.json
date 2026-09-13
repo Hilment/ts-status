@@ -1,12 +1,16 @@
 {
-  "success": false,
-  "error": "等待第一次 GitHub Actions 运行...",
-  "queryTime": null,
-  "host": null,
-  "voicePort": null,
-  "online": null,
-  "max": null,
-  "serverName": null,
-  "channels": null,
-  "uptime": null
+  "success": true,
+  "online": 1,
+  "max": 10,
+  "serverName": "25℃游戏房",
+  "channels": 6,
+  "uptime": 10854385,
+  "status": "online",
+  "port": 6517,
+  "platform": "Linux",
+  "version": "TeaSpeak 1.4.22 [Build: 1607833732]",
+  "queryType": "ts3cn-panel",
+  "host": "vv.teamspeak3.cn",
+  "voicePort": 6517,
+  "queryTime": "2026-09-13T01:36:23.891Z"
 }
