@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>TS 在线人数</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: #fff;
+    overflow: hidden;
+  }
+  .card {
+    width: 100%;
+    max-width: 360px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 36px 28px;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease;
+  }
+  .card:active { transform: scale(0.98); }
+  .server-name {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+  .count-wrap {
+    margin: 24px 0 20px;
+  }
+  .count-num {
+    font-size: 72px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .count-label {
+    font-size: 14px;
+    opacity: 0.75;
+    margin-top: 8px;
+  }
+  .count-sep {
+    font-size: 32px;
+    opacity: 0.4;
+    margin: 0 4px;
+    font-weight: 300;
+  }
+  .count-max {
+    font-size: 32px;
+    opacity: 0.6;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+  .meta-row {
+    display: flex;
+    justify-content: space-around;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    margin-top: 20px;
+  }
+  .meta-item { text-align: center; }
+  .meta-value {
+    font-size: 18px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .meta-label {
+    font-size: 12px;
+    opacity: 0.65;
+    margin-top: 4px;
+  }
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #1DC981;
+    margin-right: 6px;
+    animation: pulse 2s infinite;
+    vertical-align: middle;
+  }
+  .status-dot.offline { background: #E8463A; animation: none; }
+  .status-dot.loading { background: #EFAA17; animation: none; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .footer {
+    margin-top: 20px;
+    font-size: 11px;
+    opacity: 0.5;
+  }
+  .refresh-btn {
+    margin-top: 20px;
+    padding: 10px 24px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .refresh-btn:active {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0.95);
+  }
+  .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .error-msg {
+    font-size: 13px;
+    color: #ffd1d1;
+    margin-top: 12px;
+    word-break: break-all;
+  }
+  .addr-info {
+    margin-top: 16px;
+    font-size: 11px;
+    opacity: 0.5;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="server-name">
+      <span class="status-dot loading" id="statusDot"></span>
+      <span id="serverNameText">加载中...</span>
+    </div>
+    <div class="count-wrap">
+      <div>
+        <span class="count-num" id="onlineNum">--</span>
+        <span class="count-sep">/</span>
+        <span class="count-max" id="maxNum">--</span>
+      </div>
+      <div class="count-label">在线人数 / 上限</div>
+    </div>
+    <div class="meta-row">
+      <div class="meta-item">
+        <div class="meta-value" id="channelNum">--</div>
+        <div class="meta-label">频道数</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-value" id="uptimeText">--</div>
+        <div class="meta-label">运行时长</div>
+      </div>
+    </div>
+    <button class="refresh-btn" id="refreshBtn" onclick="fetchData()">刷新数据</button>
+    <div class="error-msg" id="errorMsg" style="display:none;"></div>
+    <div class="addr-info" id="addrInfo"></div>
+    <div class="footer" id="updateTime"></div>
+  </div>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  function formatUptime(seconds) {
+    if (!seconds) return '--';
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    if (days > 0) return `${days}天${hours}时`;
+    const mins = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) return `${hours}时${mins}分`;
+    return `${mins}分钟`;
+  }
+
+  function formatTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const pad = n => String(n).padStart(2, '0');
+    return `${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  async function fetchData() {
+    const btn = $('refreshBtn');
+    const err = $('errorMsg');
+    btn.disabled = true;
+    btn.textContent = '刷新中...';
+    err.style.display = 'none';
+
+    try {
+      const res = await fetch('status.json?_=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('数据文件不存在');
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.error || '查询失败');
+      }
+
+      $('statusDot').className = 'status-dot';
+      $('serverNameText').textContent = data.serverName || 'TeamSpeak 服务器';
+      $('onlineNum').textContent = data.online ?? '--';
+      $('maxNum').textContent = data.max ?? '--';
+      $('channelNum').textContent = data.channels ?? '--';
+      $('uptimeText').textContent = formatUptime(data.uptime);
+      $('addrInfo').textContent = data.host ? `${data.host}:${data.voicePort || ''}` : '';
+      $('updateTime').textContent = `更新于 ${formatTime(data.queryTime)}`;
+
+    } catch (e) {
+      $('statusDot').className = 'status-dot offline';
+      $('serverNameText').textContent = '获取失败';
+      $('onlineNum').textContent = '--';
+      $('maxNum').textContent = '--';
+      err.textContent = e.message || '网络错误';
+      err.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '刷新数据';
+    }
+  }
+
+  fetchData();
+  // 每 60 秒自动刷新页面数据（GitHub Actions 每 5 分钟更新一次）
+  setInterval(fetchData, 60000);
+</script>
+</body>
+</html>

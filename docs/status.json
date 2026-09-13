@@ -1,0 +1,12 @@
+{
+  "success": false,
+  "error": "等待第一次 GitHub Actions 运行...",
+  "queryTime": null,
+  "host": null,
+  "voicePort": null,
+  "online": null,
+  "max": null,
+  "serverName": null,
+  "channels": null,
+  "uptime": null
+}
