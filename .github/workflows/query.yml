@@ -25,15 +25,8 @@ jobs:
       - name: Query TeamSpeak server
         env:
           TS3CN_SERVER_ID: ${{ secrets.TS3CN_SERVER_ID }}
-          TS3CN_COOKIE: ${{ secrets.TS3CN_COOKIE }}
-          TS3CN_API_BASE: ${{ secrets.TS3CN_API_BASE }}
-          TS_HOST: ${{ secrets.TS_HOST }}
-          TS_VOICE_PORT: ${{ secrets.TS_VOICE_PORT }}
-          TS_QUERY_PORT: ${{ secrets.TS_QUERY_PORT }}
-          TS_QUERY_USER: ${{ secrets.TS_QUERY_USER }}
-          TS_QUERY_PASS: ${{ secrets.TS_QUERY_PASS }}
-          TS_USE_WEBQUERY: ${{ secrets.TS_USE_WEBQUERY }}
-          TS_API_KEY: ${{ secrets.TS_API_KEY }}
+          TS3CN_EMAIL: ${{ secrets.TS3CN_EMAIL }}
+          TS3CN_PASSWORD: ${{ secrets.TS3CN_PASSWORD }}
         run: node scripts/query.js
 
       - name: Commit and push
