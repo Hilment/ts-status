@@ -2,13 +2,13 @@ name: TS Status Query
 
 on:
   schedule:
-    # 每 5 分钟运行一次
-    - cron: '*/5 * * * *'
-  # 允许手动触发
+    - cron: '*/30 * * * *'
   workflow_dispatch:
-  # 推送代码时也跑一次
   push:
     branches: [main]
+
+permissions:
+  contents: write
 
 jobs:
   query:
@@ -24,11 +24,9 @@ jobs:
 
       - name: Query TeamSpeak server
         env:
-          # ts3.cn 面板 API 方式（推荐，无需 ServerQuery）
           TS3CN_SERVER_ID: ${{ secrets.TS3CN_SERVER_ID }}
           TS3CN_COOKIE: ${{ secrets.TS3CN_COOKIE }}
           TS3CN_API_BASE: ${{ secrets.TS3CN_API_BASE }}
-          # 以下是备用的 ServerQuery 方式（如果面板方式不行再用）
           TS_HOST: ${{ secrets.TS_HOST }}
           TS_VOICE_PORT: ${{ secrets.TS_VOICE_PORT }}
           TS_QUERY_PORT: ${{ secrets.TS_QUERY_PORT }}
@@ -38,9 +36,10 @@ jobs:
           TS_API_KEY: ${{ secrets.TS_API_KEY }}
         run: node scripts/query.js
 
-      - name: Commit and push if changed
+      - name: Commit and push
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add docs/status.json
-          git diff --quiet && echo "无变化，跳过提交" || (git commit -m "更新 TS 在线人数 [auto]" && git push)
+          git commit -m "更新 TS 在线人数 [auto]" || echo "无变化但仍提交"
+          git push
