@@ -1,0 +1,43 @@
+name: TS Status Query
+
+on:
+  schedule:
+    # 每 5 分钟运行一次
+    - cron: '*/5 * * * *'
+  # 允许手动触发
+  workflow_dispatch:
+  # 推送代码时也跑一次
+  push:
+    branches: [main]
+
+jobs:
+  query:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Query TeamSpeak server
+        env:
+          TS_HOST: ${{ secrets.TS_HOST }}
+          TS_VOICE_PORT: ${{ secrets.TS_VOICE_PORT }}
+          TS_QUERY_PORT: ${{ secrets.TS_QUERY_PORT }}
+          TS_WEBQUERY_PORT: ${{ secrets.TS_WEBQUERY_PORT }}
+          TS_SERVER_ID: ${{ secrets.TS_SERVER_ID }}
+          TS_QUERY_USER: ${{ secrets.TS_QUERY_USER }}
+          TS_QUERY_PASS: ${{ secrets.TS_QUERY_PASS }}
+          TS_API_KEY: ${{ secrets.TS_API_KEY }}
+          TS_USE_WEBQUERY: ${{ secrets.TS_USE_WEBQUERY }}
+        run: node scripts/query.js
+
+      - name: Commit and push if changed
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docs/status.json
+          git diff --quiet && echo "无变化，跳过提交" || (git commit -m "更新 TS 在线人数 [auto]" && git push)
