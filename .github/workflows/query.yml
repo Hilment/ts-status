@@ -4,7 +4,7 @@ on:
   schedule:
     # 每 5 分钟自动查询一次
     - cron: '*/5 * * * *'
-  # 支持手动触发（网页上的「触发更新」按钮就是调这个）
+  # 支持手动触发（网页上的按钮和 Actions 页面的 Run workflow）
   workflow_dispatch:
   # 推送代码时也跑一次
   push:
