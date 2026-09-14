@@ -2,11 +2,15 @@ name: TS Status Query
 
 on:
   schedule:
+    # 每 5 分钟自动查询一次
     - cron: '*/5 * * * *'
+  # 支持手动触发（网页上的「触发更新」按钮就是调这个）
   workflow_dispatch:
+  # 推送代码时也跑一次
   push:
     branches: [main]
 
+# 需要写权限才能把查询结果提交回仓库
 permissions:
   contents: write
 
@@ -33,6 +37,9 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add docs/status.json
-          git commit -m "更新 TS 在线人数 [auto]" || echo "无变化但仍提交"
+          # 写一个时间戳文件，保证仓库一直有活动，
+          # 避免 GitHub 因「60 天无活动」自动停掉定时任务
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .last_update
+          git add docs/status.json .last_update
+          git commit -m "更新 TS 在线人数 [auto]" || echo "无变化，跳过本次提交"
           git push
