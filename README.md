@@ -1,6 +1,6 @@
 # 微信一键查询 TS 在线人数（GitHub 纯免费版）
 
-> 适配 `vv.teamspeak3.cn:6517` 等 TeamSpeak 服务器
+> 适配TeamSpeak 服务器
 
 **完全免费，只需一个 GitHub 账号。** GitHub Actions 每 5 分钟自动查询人数，GitHub Pages 展示结果。微信里打开链接收藏后一点即查。
 
