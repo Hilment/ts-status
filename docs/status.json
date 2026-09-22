@@ -1,10 +1,10 @@
 {
   "success": true,
-  "online": 3,
+  "online": 1,
   "max": 10,
   "serverName": "25℃游戏房",
   "channels": 6,
-  "uptime": 11671907,
+  "uptime": 11688557,
   "status": "online",
   "port": 6517,
   "platform": "Linux",
@@ -12,5 +12,5 @@
   "queryType": "ts3cn-autologin",
   "host": "vv.teamspeak3.cn",
   "voicePort": 6517,
-  "queryTime": "2026-09-22T12:41:45.842Z"
+  "queryTime": "2026-09-22T17:19:15.889Z"
 }
