@@ -16,6 +16,44 @@ const CONFIG = {
 
 const OUTPUT_FILE = path.join(__dirname, '..', 'docs', 'status.json');
 
+// 带重试的查询：ts3.com.cn 偶尔会抽风（超时 / 502 / 登录页返回异常），
+// 单次失败不该直接让网页显示「离线」。最多重试 3 次，指数退避。
+const RETRY_TIMES = Number(process.env.TS3CN_RETRY || 3);
+const RETRY_DELAY_MS = 5000;
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function queryOnce() {
+  // 第一步：自动登录获取 Cookie
+  console.log('正在自动登录 ts3.com.cn ...');
+  const cookies = await autoLogin();
+  console.log('✓ 登录成功，已获取有效 Cookie');
+
+  // 第二步：用登录后的 Cookie 查询服务器信息
+  console.log('正在查询服务器信息...');
+  return fetchServerInfo(cookies);
+}
+
+async function queryWithRetry() {
+  let lastError;
+  for (let attempt = 1; attempt <= RETRY_TIMES; attempt++) {
+    try {
+      return await queryOnce();
+    } catch (e) {
+      lastError = e;
+      console.error(`第 ${attempt}/${RETRY_TIMES} 次尝试失败: ${e.message}`);
+      if (attempt < RETRY_TIMES) {
+        const wait = RETRY_DELAY_MS * attempt;
+        console.log(`  ${wait / 1000} 秒后重试...`);
+        await sleep(wait);
+      }
+    }
+  }
+  throw lastError;
+}
+
 async function main() {
   console.log('=== TS 在线人数查询（自动登录版）===');
   console.log('服务器 ID: ' + CONFIG.serverId);
@@ -27,14 +65,7 @@ async function main() {
 
   let result;
   try {
-    // 第一步：自动登录获取 Cookie
-    console.log('正在自动登录 ts3.com.cn ...');
-    const cookies = await autoLogin();
-    console.log('✓ 登录成功，已获取有效 Cookie');
-
-    // 第二步：用登录后的 Cookie 查询服务器信息
-    console.log('正在查询服务器信息...');
-    const data = await fetchServerInfo(cookies);
+    const data = await queryWithRetry();
 
     result = {
       success: true,
@@ -59,19 +90,24 @@ async function main() {
     console.log('  频道数: ' + result.channels);
 
   } catch (error) {
-    console.error('✗ 查询失败:', error.message);
-    result = {
-      success: false,
-      error: error.message,
-      queryTime: new Date().toISOString(),
-      online: null,
-      max: null,
-      serverName: null,
-      channels: null,
-      uptime: null,
-      status: null,
-      port: null,
-    };
+    // 重试后仍然失败。此时不要把 null 写进 status.json ——
+    // 那会让网页把一次网络抖动显示成「服务器离线」，并且覆盖掉
+    // 上一次的有效数据（workflow 里的 grep 校验也会因此跳过提交）。
+    // 保留旧文件并静默退出即可，等下一次 20 分钟后的定时任务再试。
+    console.error('✗ 查询失败（已重试 ' + RETRY_TIMES + ' 次）:', error.message);
+    if (fs.existsSync(OUTPUT_FILE)) {
+      console.log('保留上一次的有效数据，本次不更新 ' + OUTPUT_FILE);
+    } else {
+      console.log('尚无历史数据，写入一个未知状态占位');
+      fs.writeFileSync(OUTPUT_FILE, JSON.stringify({
+        success: false,
+        error: error.message,
+        queryTime: new Date().toISOString(),
+        online: null, max: null, serverName: null,
+        channels: null, uptime: null, status: null, port: null,
+      }, null, 2));
+    }
+    process.exit(0);
   }
 
   const dir = path.dirname(OUTPUT_FILE);
